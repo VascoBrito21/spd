@@ -103,34 +103,50 @@ void checkSquare(int **a, int n, int *vLines, int *vCols){
 }
 
 void magic_square(char *filename) {
-    FILE *f = fopen(filename, "r");
-    int n = parse_order(filename);
-    int size = n*n;
-    int vLines[n];
-    int vCols[n];
-    int **m = ints2_new(n,n);
+    int n; 
+    int size;
 
     if(world_rank == 0) {
+        FILE *f = fopen(filename, "r");
+        n = parse_order(filename);
+        size = n*n;
+        int ** m = ints2_new(n,n);
         ints2_get(m,n,f);
+        MPI_Send(&n, 1, MPI_INT, 1, 99, MPI_COMM_WORLD);
+        MPI_Send(&n, 1, MPI_INT, 2, 99, MPI_COMM_WORLD);
+        MPI_Send(&n, 1, MPI_INT, 3, 99, MPI_COMM_WORLD);
         MPI_Send(&m[0][0], size, MPI_INT, 1, 99, MPI_COMM_WORLD);
         MPI_Send(&m[0][0], size, MPI_INT, 2, 99, MPI_COMM_WORLD);
         MPI_Send(&m[0][0], size, MPI_INT, 3, 99, MPI_COMM_WORLD);
     }
 
     else if(world_rank == 1) {
+        MPI_Recv(&n, 1, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int **m = ints2_new(n,n);
+        size = n*n;
         MPI_Recv(&m[0][0], size, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int vLines[n];
         sumLines(m,n,vLines);
         MPI_Send(vLines, n, MPI_INT, 3, 98, MPI_COMM_WORLD);
     }
 
     else if(world_rank == 2) {
+        MPI_Recv(&n, 1, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int **m = ints2_new(n,n);
+        size = n*n;
         MPI_Recv(&m[0][0], size, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int vCols[n];
         sumCols(m,n,vCols);
         MPI_Send(vCols, n, MPI_INT, 3, 97, MPI_COMM_WORLD);
     }
 
     else if(world_rank == 3) {
+        MPI_Recv(&n, 1, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int **m = ints2_new(n,n);
+        size = n*n;
         MPI_Recv(&m[0][0], size, MPI_INT, 0, 99, MPI_COMM_WORLD, &status);
+        int vCols[n];
+        int vLines[n];
         MPI_Recv(vLines, n, MPI_INT, 1, 98, MPI_COMM_WORLD, &status);
         MPI_Recv(vCols, n, MPI_INT, 2, 97, MPI_COMM_WORLD, &status);
         checkSquare(m,n,vLines,vCols);
